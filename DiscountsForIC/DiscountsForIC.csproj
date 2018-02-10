@@ -58,8 +58,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ItemDiscount.cs" />
+    <Compile Include="ItemIC.cs" />
+    <Compile Include="SystemDataHandle.cs" />
     <Compile Include="SystemFirebirdClient.cs" />
-    <Compile Include="SystemLogging.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

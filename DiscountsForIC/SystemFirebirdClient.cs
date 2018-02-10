@@ -2,39 +2,62 @@
 using System.Data;
 using System.Collections.Generic;
 using FirebirdSql.Data.FirebirdClient;
+using System.Windows;
 
-namespace LoyaltySurvey {
-    class SystemFirebirdClient {
-        private FbConnection connection;
+namespace DiscountsForIC {
+	class SystemFirebirdClient {
+		private FbConnection connection;
 
 		public SystemFirebirdClient(string ipAddress, string baseName, string user, string pass) {
-			SystemLogging.LogMessageToFile("Создание подключения к базе FB: " + 
-				ipAddress + ":" + baseName);
+			FbConnectionStringBuilder cs = new FbConnectionStringBuilder {
+				DataSource = ipAddress,
+				Database = baseName,
+				UserID = user,
+				Password = pass,
+				Charset = "NONE",
+				Pooling = false
+			};
 
-			FbConnectionStringBuilder cs = new FbConnectionStringBuilder();
-            cs.DataSource = ipAddress;
-            cs.Database = baseName;
-            cs.UserID = user;
-            cs.Password = pass;
-            cs.Charset = "NONE";
-            cs.Pooling = false;
-
-            connection = new FbConnection(cs.ToString());
+			connection = new FbConnection(cs.ToString());
+			IsConnectionOpened();
 		}
 
-		public DataTable GetDataTable(string query) {
+		public void Close() {
+			connection.Close();
+		}
+
+		private bool IsConnectionOpened() {
+			if (connection.State != ConnectionState.Open) {
+				try {
+					connection.Open();
+				} catch (Exception e) {
+					MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace, "Ошибка подключения к БД", 
+						MessageBoxButton.OK, MessageBoxImage.Error);
+				}
+			}
+
+			return connection.State == ConnectionState.Open;
+		}
+
+		public DataTable GetDataTable(string query, Dictionary<string, string> parameters) {
 			DataTable dataTable = new DataTable();
 
+			if (!IsConnectionOpened())
+				return dataTable;
+
 			try {
-				connection.Open();
 				FbCommand command = new FbCommand(query, connection);
+
+				if (parameters.Count > 0) {
+					foreach (KeyValuePair<string, string> parameter in parameters)
+						command.Parameters.AddWithValue(parameter.Key, parameter.Value);
+				}
 
 				FbDataAdapter fbDataAdapter = new FbDataAdapter(command);
 				fbDataAdapter.Fill(dataTable);
 			} catch (Exception e) {
-				SystemLogging.LogMessageToFile("GetDataTable exception: " + query + 
-					Environment.NewLine + e.Message + Environment.NewLine + e.StackTrace);
-			} finally {
+				MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace, "Ошибка выполнения запроса к БД", 
+					MessageBoxButton.OK, MessageBoxImage.Error);
 				connection.Close();
 			}
 
@@ -43,8 +66,11 @@ namespace LoyaltySurvey {
 
 		public bool ExecuteUpdateQuery(string query, Dictionary<string, object> parameters) {
 			bool updated = false;
+
+			if (!IsConnectionOpened())
+				return updated;
+
 			try {
-				connection.Open();
 				FbCommand update = new FbCommand(query, connection);
 
 				if (parameters.Count > 0) {
@@ -54,9 +80,8 @@ namespace LoyaltySurvey {
 
 				updated = update.ExecuteNonQuery() > 0 ? true : false;
 			} catch (Exception e) {
-				SystemLogging.LogMessageToFile("ExecuteUpdateQuery exception: " + query +
-					Environment.NewLine + e.Message + Environment.NewLine + e.StackTrace);
-			} finally {
+				MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace, "Ошибка выполнения запроса к БД", 
+					MessageBoxButton.OK, MessageBoxImage.Error);
 				connection.Close();
 			}
 

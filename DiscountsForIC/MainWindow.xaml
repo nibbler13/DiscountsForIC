@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DiscountsForIC"
         mc:Ignorable="d"
-        Title="MainWindow" Width="1100" Height="500" Background="#FFF0F0F0" WindowStartupLocation="CenterScreen" MinWidth="1100" MinHeight="500">
+        Title="MainWindow" Width="1100" Height="600" Background="#FFF0F0F0" WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <DataTemplate x:Key="ArrowUp">
             <DockPanel>
@@ -20,76 +20,117 @@
             </DockPanel>
         </DataTemplate>
     </Window.Resources>
-    
+
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" MinWidth="315"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <TextBlock Grid.Row="0" Text="Результаты поиска:" Margin="10,10,10,0" TextAlignment="Center"/>
 
-        <ListView Grid.Row="1" Margin="10,5,10,10">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn Header="  Наименование организации  "/>
-                    <GridViewColumn Header="  Номер договора  "/>
-                </GridView>
-            </ListView.View>
-        </ListView>
-
-        <TextBlock Grid.Row="2" Text="Наименование организации / номер договора:" Margin="10,10,10,0" TextAlignment="Center"/>
-        <TextBox Grid.Row="3" Margin="10,0,10,10"/>
-        <Button Grid.Row="4" Content="Поиск" Margin="10,0,10,10" Width="80"/>
-
-        <GridSplitter Grid.RowSpan="5" HorizontalAlignment="Right" Width="1" Background="#FFC8C8C8" Margin="0,10"/>
-
-        <TextBlock Grid.Row="0" Grid.Column="1" Text="Информация по скидкам для выбранного договора:" Margin="10,10,10,0" TextAlignment="Center"/>
-
-        <Grid Grid.Row="2" Grid.RowSpan="3" Grid.Column="1" Margin="10">
+        <Grid Margin="10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
+            
+            <TextBlock Text="Наименование СК / договор №:" TextAlignment="Center"/>
+            <TextBox Grid.Column="1" Margin="10,0" x:Name="TextBoxSearch" KeyDown="TextBoxSearch_KeyDown" TabIndex="1"/>
+            <Button Grid.Column="2" Content="Поиск" Width="80" x:Name="ButtonSearch" Click="ButtonSearch_Click"/>
+        </Grid>
+        
+        <TextBlock Grid.Row="1" Text="Результаты поиска:" Margin="10,10,10,0" TextAlignment="Center"/>
+
+        <ListView Grid.Row="2" Margin="10,5,10,10" x:Name="ListViewSearchResults" 
+                  SelectionChanged="ListViewSearchResults_SelectionChanged" ItemsSource="{Binding ItemsIC}"
+                  GridViewColumnHeader.Click="ListViewHeader_Click">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="  Наименование СК  " DisplayMemberBinding="{Binding JNAME}"/>
+                    <GridViewColumn Header="  Договор №  " DisplayMemberBinding="{Binding AGNUM}"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+        <GridSplitter Grid.Row="3" VerticalAlignment="Top" HorizontalAlignment="Stretch" Height="2" 
+                      Background="#FFC8C8C8" Margin="10,0" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext"/>
+        
+        <TextBlock Grid.Row="3" Text="Информация по скидкам для выбранных договоров:" Margin="10,10,10,0" TextAlignment="Center"/>
+
+        <ListView Grid.Row="4" Margin="10,5,10,10" x:Name="ListViewDiscounts" ItemsSource="{Binding ItemsDiscount}" 
+                  SelectionChanged="ListViewDiscounts_SelectionChanged" GridViewColumnHeader.Click="ListViewHeader_Click">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="  Филиал  " DisplayMemberBinding="{Binding FILIAL}"/>
+                    <GridViewColumn Header="  Наименование СК  "/>
+                    <GridViewColumn Header="  Договор №  "/>
+                    <GridViewColumn Header="  Бессрочная  ">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding ENDLESS}"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="  Дата начала  ">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <DatePicker SelectedDate="{Binding BEGINDATE}"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="  Дата окончания  ">
+                    <GridViewColumn.CellTemplate>
+                        <DataTemplate>
+                                <DatePicker SelectedDate="{Binding ENDDATE}"/>
+                        </DataTemplate>
+                    </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="  Зависит от суммы  ">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding AMOUNTRELATION}"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="  Сумма от  " DisplayMemberBinding="{Binding STARTAMOUNT}"/>
+                    <GridViewColumn Header="  Сумма до  " DisplayMemberBinding="{Binding FINISHAMOUNT}"/>
+                    <GridViewColumn Header="  Размер скидки, %  " DisplayMemberBinding="{Binding DISCOUNT}"/>
+                    <GridViewColumn Header="  Комментарий  ">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBox Text="{Binding COMMENT}"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+        <Grid Grid.Row="5" Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="80"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="80"/>
+            </Grid.ColumnDefinitions>
+            
+            <StackPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Button Content="Добавить" Margin="0,0,10,0" Width="80"/>
+                <Button Content="Удалить" Margin="10,0,0,0" Width="80"/>
+                <Button Content="Сохранить изменения" Margin="40,0,0,0" Width="180"/>
+            </StackPanel>
 
             <Image Source="ButterflyClear.png" Grid.Column="2"
                StretchDirection="DownOnly" MaxWidth="80" MaxHeight="80"
                VerticalAlignment="Bottom"
                HorizontalAlignment="Right"/>
         </Grid>
-        
-        <ListView Grid.Row="1" Grid.Column="1" Margin="10,5,10,10">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn Header="  Бессрочная  "/>
-                    <GridViewColumn Header="  Дата начала  "/>
-                    <GridViewColumn Header="  Дата окончания  "/>
-                    <GridViewColumn Header="  Зависит от суммы  "/>
-                    <GridViewColumn Header="  Сумма от  "/>
-                    <GridViewColumn Header="  Сумма до  "/>
-                    <GridViewColumn Header="  Размер скидки, %  "/>
-                    <GridViewColumn Header="  Комментарий  "/>
-                </GridView>
-            </ListView.View>
-        </ListView>
 
-        <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.RowSpan="3" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Button Content="Добавить" Margin="0,0,10,0" Width="80"/>
-            <Button Content="Удалить" Margin="10,0,0,0" Width="80"/>
-            <Button Content="Сохранить изменения" Margin="40,0,0,0" Width="180"/>
-        </StackPanel>
-
-        <Grid Grid.Row="7" Grid.ColumnSpan="2" Height="10" VerticalAlignment="Bottom">
+        <Grid Grid.Row="6" Grid.ColumnSpan="2" Height="10" VerticalAlignment="Bottom">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
