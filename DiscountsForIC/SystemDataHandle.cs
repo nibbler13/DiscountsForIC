@@ -26,14 +26,14 @@ namespace DiscountsForIC {
 
 
 			DataTable dataTable = firebirdClient.GetDataTable(sqlQuerySearch, new Dictionary<string, string> { { "@entered", text } });
-			if (dataTable.Rows.Count == 0) {
-				list.Add(new ItemIC() { JNAME = "Нет данных" });
+			if (dataTable.Rows.Count == 0)
 				return list;
-			}
 
 			foreach (DataRow row in dataTable.Rows) {
 				try {
 					list.Add(new ItemIC() {
+						FILIAL = row["FILIAL"].ToString(),
+						SHORTNAME = row["SHORTNAME"].ToString(),
 						JNAME = row["JNAME"].ToString(),
 						AGNUM = row["AGNUM"].ToString(),
 						JID = row["JID"].ToString(),
@@ -59,30 +59,43 @@ namespace DiscountsForIC {
 			agrids = agrids.TrimEnd(',');
 
 			DataTable dataTable = firebirdClient.GetDataTable(sqlQuerySelectDiscounts.Replace("@list", agrids), new Dictionary<string, string>() );
-			if (dataTable.Rows.Count == 0) {
-				list.Add(new ItemDiscount() { FILIAL = "Нет данных" });
+			if (dataTable.Rows.Count == 0) 
 				return list;
-			}
 
 			foreach (DataRow row in dataTable.Rows) {
 				try {
 					DateTime.TryParseExact(row["BEGINDATE"].ToString(), "dd.MM.yyyy H:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out DateTime begindate);
 					DateTime.TryParseExact(row["ENDDATE"].ToString(), "dd.MM.yyyy H:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out DateTime enddate);
+					bool isStartAmount = int.TryParse(row["STARTAMOUNT"].ToString(), out int startamount);
+					bool isFinishAmount = int.TryParse(row["FINISHAMOUNT"].ToString(), out int finishamount);
+					bool isDiscount = int.TryParse(row["DISCOUNT"].ToString(), out int discount);
 
-					list.Add(new ItemDiscount() {
+					ItemDiscount itemDiscount = new ItemDiscount() {
 						BZ_ADID = row["BZ_ADID"].ToString(),
-						JID = row["JID"].ToString(),
-						AGRID = row["AGRID"].ToString(),
-						FILIAL = row["FILIAL"].ToString(),
+						JNAME = row["JNAME"].ToString(),
+						AGNUM = row["AGNUM"].ToString(),
+						SHORTNAME = row["SHORTNAME"].ToString(),
 						ENDLESS = row["ENDLESS"].ToString().Equals("1"),
 						BEGINDATE = begindate,
 						ENDDATE = enddate,
 						AMOUNTRELATION = row["AMOUNTRELATION"].ToString().Equals("1"),
-						STARTAMOUNT = row["STARTAMOUNT"].ToString(),
-						FINISHAMOUNT = row["FINISHAMOUNT"].ToString(),
-						COMMENT = row["COMMENT"].ToString(),
-						DISCOUNT = row["DISCOUNT"].ToString()
-					});
+						COMMENT = row["COMMENT"].ToString()
+					};
+
+					if (isStartAmount)
+						itemDiscount.STARTAMOUNT = startamount;
+
+					if (isFinishAmount)
+						itemDiscount.FINISHAMOUNT = finishamount;
+
+					if (isDiscount)
+						itemDiscount.DISCOUNT = discount;
+
+					string contractPreview = itemDiscount.SHORTNAME + " / " + itemDiscount.JNAME + " / " + itemDiscount.AGNUM;
+					itemDiscount.Contract.Add(contractPreview);
+					itemDiscount.ContractPreview = contractPreview;
+
+					list.Add(itemDiscount);
 				} catch (Exception e) {
 					MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace, "Ошибка обработки данных",
 						MessageBoxButton.OK, MessageBoxImage.Error);

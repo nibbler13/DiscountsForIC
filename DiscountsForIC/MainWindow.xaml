@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DiscountsForIC"
         mc:Ignorable="d"
-        Title="MainWindow" Width="1100" Height="600" Background="#FFF0F0F0" WindowStartupLocation="CenterScreen">
+        Title="MainWindow" Width="1100" Height="600" 
+        Background="#FFF0F0F0" WindowStartupLocation="CenterScreen" WindowState="Normal">
     <Window.Resources>
         <DataTemplate x:Key="ArrowUp">
             <DockPanel>
@@ -13,12 +14,17 @@
                 <Path VerticalAlignment="Center" Fill="Black" Data="M 5,5 15,5 10,0 5,5" />
             </DockPanel>
         </DataTemplate>
+        
         <DataTemplate x:Key="ArrowDown">
             <DockPanel>
                 <TextBlock HorizontalAlignment="Center" Text="{Binding}" />
                 <Path VerticalAlignment="Center" Fill="Black" Data="M 5,0 10,5 15,0 5,0" />
             </DockPanel>
         </DataTemplate>
+
+        <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <local:BoolToEnableConverter x:Key="BoolToEnableConverter"/>
+        <local:PopValidationRule x:Key="PopValidationRule"/>
     </Window.Resources>
 
     <Grid>
@@ -45,12 +51,21 @@
         </Grid>
         
         <TextBlock Grid.Row="1" Text="Результаты поиска:" Margin="10,10,10,0" TextAlignment="Center"/>
+        <Button Content="Выбрать все" 
+                Grid.Row="1" 
+                HorizontalAlignment="Right" 
+                Margin="10,10,10,0" 
+                Width="80" 
+                x:Name="ButtonSelectAllIC" 
+                IsEnabled="False"
+                Click="ButtonSelectAllIC_Click"/>
 
         <ListView Grid.Row="2" Margin="10,5,10,10" x:Name="ListViewSearchResults" 
                   SelectionChanged="ListViewSearchResults_SelectionChanged" ItemsSource="{Binding ItemsIC}"
                   GridViewColumnHeader.Click="ListViewHeader_Click">
             <ListView.View>
                 <GridView>
+                    <GridViewColumn Header="  Филиал  " DisplayMemberBinding="{Binding SHORTNAME}"/>
                     <GridViewColumn Header="  Наименование СК  " DisplayMemberBinding="{Binding JNAME}"/>
                     <GridViewColumn Header="  Договор №  " DisplayMemberBinding="{Binding AGNUM}"/>
                 </GridView>
@@ -59,51 +74,211 @@
 
         <GridSplitter Grid.Row="3" VerticalAlignment="Top" HorizontalAlignment="Stretch" Height="2" 
                       Background="#FFC8C8C8" Margin="10,0" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext"/>
-        
-        <TextBlock Grid.Row="3" Text="Информация по скидкам для выбранных договоров:" Margin="10,10,10,0" TextAlignment="Center"/>
 
-        <ListView Grid.Row="4" Margin="10,5,10,10" x:Name="ListViewDiscounts" ItemsSource="{Binding ItemsDiscount}" 
-                  SelectionChanged="ListViewDiscounts_SelectionChanged" GridViewColumnHeader.Click="ListViewHeader_Click">
+        <TextBlock Grid.Row="3" Text="Информация по скидкам для выбранных договоров:" Margin="10,10,10,0" TextAlignment="Center"/>
+        <Button Content="Выбрать все" 
+                Grid.Row="3" 
+                HorizontalAlignment="Right" 
+                Margin="10,10,10,0" 
+                Width="80" 
+                x:Name="ButtonSelectAllDiscounts" 
+                IsEnabled="False"
+                Click="ButtonSelectAllDiscounts_Click"/>
+
+        <ListView Grid.Row="4" 
+                  Margin="10,5,10,10" 
+                  x:Name="ListViewDiscounts" 
+                  ItemsSource="{Binding ItemsDiscount}" 
+                  SelectionChanged="ListViewDiscounts_SelectionChanged"
+                  HorizontalContentAlignment="Stretch">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                </Style>
+            </ListView.ItemContainerStyle>
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="  Филиал  " DisplayMemberBinding="{Binding FILIAL}"/>
-                    <GridViewColumn Header="  Наименование СК  "/>
-                    <GridViewColumn Header="  Договор №  "/>
-                    <GridViewColumn Header="  Бессрочная  ">
+                    <GridViewColumn>
+                        <GridViewColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="Филиал / Наименование СК / Договор №" Margin="5,0"/>
+                            </DataTemplate>
+                        </GridViewColumn.HeaderTemplate>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <CheckBox IsChecked="{Binding ENDLESS}"/>
+                                <ComboBox ItemsSource="{Binding Contract}" 
+                                          SelectedItem="{Binding ContractPreview}"
+                                          IsEnabled="{Binding Path=Contract, Converter={StaticResource BoolToEnableConverter}}"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn Header="  Дата начала  ">
+
+                    <GridViewColumn>
+                        <GridViewColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="Дата начала" Margin="5,0"/>
+                            </DataTemplate>
+                        </GridViewColumn.HeaderTemplate>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <DatePicker SelectedDate="{Binding BEGINDATE}"/>
+                                <DatePicker SelectedDate="{Binding BEGINDATE}" 
+                                            HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn Header="  Дата окончания  ">
-                    <GridViewColumn.CellTemplate>
-                        <DataTemplate>
-                                <DatePicker SelectedDate="{Binding ENDDATE}"/>
-                        </DataTemplate>
-                    </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                    <GridViewColumn Header="  Зависит от суммы  ">
+
+                    <GridViewColumn>
+                        <GridViewColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}, Path=ComboBoxEndlessIsChecked}"
+                                          Content="Бессрочная"
+                                          HorizontalAlignment="Center" 
+                                          Margin="5,0"
+                                          x:Name="CheckBoxEndless"
+                                          Click="CheckBoxEndless_Click"/>
+                            </DataTemplate>
+                        </GridViewColumn.HeaderTemplate>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <CheckBox IsChecked="{Binding AMOUNTRELATION}"/>
+                                <CheckBox IsChecked="{Binding ENDLESS}" 
+                                          HorizontalAlignment="Center" 
+                                          Margin="5,0" Click="CheckBox_Click"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn Header="  Сумма от  " DisplayMemberBinding="{Binding STARTAMOUNT}"/>
-                    <GridViewColumn Header="  Сумма до  " DisplayMemberBinding="{Binding FINISHAMOUNT}"/>
-                    <GridViewColumn Header="  Размер скидки, %  " DisplayMemberBinding="{Binding DISCOUNT}"/>
-                    <GridViewColumn Header="  Комментарий  ">
+
+                    <GridViewColumn>
+                        <GridViewColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="Дата окончания" Margin="5,0"/>
+                            </DataTemplate>
+                        </GridViewColumn.HeaderTemplate>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBox Text="{Binding COMMENT}"/>
+                                <DatePicker SelectedDate="{Binding ENDDATE}" 
+                                            HorizontalAlignment="Center">
+                                    <DatePicker.Visibility>
+                                        <Binding Path="ENDLESS" 
+                                                 Converter="{StaticResource BoolToVisibilityConverter}" 
+                                                 ConverterParameter="invert"/>
+                                    </DatePicker.Visibility>
+                                </DatePicker>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn>
+                        <GridViewColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}, Path=ComboBoxAmountRelationIsChecked}" 
+                                          Content="Зависит от суммы" 
+                                          HorizontalAlignment="Center" 
+                                          Margin="5,0"
+                                          x:Name="CheckBoxAmountRelation"
+                                          Click="CheckBoxAmountRelation_Click"/>
+                            </DataTemplate>
+                        </GridViewColumn.HeaderTemplate>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding AMOUNTRELATION}" 
+                                          HorizontalAlignment="Center" Click="CheckBox_Click"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn>
+                        <GridViewColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="Сумма от" Margin="5,0"/>
+                            </DataTemplate>
+                        </GridViewColumn.HeaderTemplate>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBox TextAlignment="Right" 
+                                         HorizontalAlignment="Stretch" 
+                                         PreviewLostKeyboardFocus="TextBox_PreviewLostKeyboardFocus" 
+                                         PreviewTextInput="TextBox_PreviewTextInput"
+                                         DataObject.Pasting="TextBox_Pasting">
+                                    <TextBox.Visibility>
+                                        <Binding Path="AMOUNTRELATION" 
+                                                 Converter="{StaticResource BoolToVisibilityConverter}" 
+                                                 ConverterParameter="direct"/>
+                                    </TextBox.Visibility>
+                                    <Binding 
+                                        Path="STARTAMOUNT"
+                                        UpdateSourceTrigger="LostFocus"
+                                        StringFormat="{}{0:# ### ### ###}">
+                                    </Binding>
+                                </TextBox>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn>
+                        <GridViewColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="Сумма до" Margin="5,0"/>
+                            </DataTemplate>
+                        </GridViewColumn.HeaderTemplate>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBox TextAlignment="Right" 
+                                         HorizontalAlignment="Stretch"
+                                         PreviewLostKeyboardFocus="TextBox_PreviewLostKeyboardFocus" 
+                                         PreviewTextInput="TextBox_PreviewTextInput"
+                                         DataObject.Pasting="TextBox_Pasting">
+                                    <TextBox.Visibility>
+                                        <Binding Path="AMOUNTRELATION" 
+                                                 Converter="{StaticResource BoolToVisibilityConverter}" 
+                                                 ConverterParameter="direct"/>
+                                    </TextBox.Visibility>
+                                    <Binding 
+                                        Path="FINISHAMOUNT"
+                                        UpdateSourceTrigger="LostFocus"
+                                        StringFormat="{}{0:# ### ### ###}">
+                                    </Binding>
+                                </TextBox>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn>
+                        <GridViewColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="Размер скидки, %" Margin="5,0"/>
+                            </DataTemplate>
+                        </GridViewColumn.HeaderTemplate>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBox TextAlignment="Right" 
+                                         HorizontalAlignment="Stretch"
+                                         PreviewLostKeyboardFocus="TextBox_PreviewLostKeyboardFocus" 
+                                         PreviewTextInput="TextBox_PreviewTextInput"
+                                         DataObject.Pasting="TextBox_Pasting">
+                                    <Binding 
+                                        Path="DISCOUNT"
+                                        UpdateSourceTrigger="LostFocus"
+                                        StringFormat="{}{0:#}">
+                                        <Binding.ValidationRules>
+                                            <local:PopValidationRule/>
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn>
+                        <GridViewColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="Комментарий" Margin="5,0"/>
+                            </DataTemplate>
+                        </GridViewColumn.HeaderTemplate>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBox Text="{Binding COMMENT}" 
+                                         HorizontalAlignment="Stretch"
+                                         MinWidth="300"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -118,10 +293,14 @@
                 <ColumnDefinition Width="80"/>
             </Grid.ColumnDefinitions>
             
-            <StackPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Button Content="Добавить" Margin="0,0,10,0" Width="80"/>
-                <Button Content="Удалить" Margin="10,0,0,0" Width="80"/>
-                <Button Content="Сохранить изменения" Margin="40,0,0,0" Width="180"/>
+            <StackPanel Orientation="Horizontal" Grid.Column="1" 
+                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Button Content="Добавить" Margin="0,0,10,0" Width="80" 
+                        x:Name="ButtonAdd" IsEnabled="False" Click="ButtonAdd_Click"/>
+                <Button Content="Удалить" Margin="10,0,0,0" Width="80" 
+                        x:Name="ButtonDelete" IsEnabled="False" Click="ButtonDelete_Click" Background="Red" Foreground="White"/>
+                <Button Content="Сохранить изменения" Margin="40,0,0,0" 
+                        Width="180" x:Name="ButtonApplyChanges" IsEnabled="False" Click="ButtonApplyChanges_Click" Background="LightGreen"/>
             </StackPanel>
 
             <Image Source="ButterflyClear.png" Grid.Column="2"
