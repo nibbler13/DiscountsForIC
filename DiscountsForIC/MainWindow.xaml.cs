@@ -78,12 +78,39 @@ namespace DiscountsForIC {
 				(s, e) => { AutoResizeGridViewColumns(ListViewSearchResults.View as GridView); };
 			ItemsDiscount.CollectionChanged += 
 				(s, e) => { AutoResizeGridViewColumns(ListViewDiscounts.View as GridView); };
-			Closed += (s, e) => { SystemDataHandle.CloseConnection(); };
+			Closing += MainWindow_Closing;
 			TextBoxSearch.Focus();
 			ItemsIC.Add(new ItemIC() { SHORTNAME = "Введите текст и нажмите кнопку поиск" });
 
 			ItemsDiscount.CollectionChanged += ItemsDiscount_CollectionChanged;
 		}
+
+		private void MainWindow_Closing(object sender, CancelEventArgs e) {
+			if (NeedToReturnToEditDiscounts()) {
+				e.Cancel = true;
+				return;
+			}
+
+			SystemDataHandle.CloseConnection();
+		}
+
+		private bool NeedToReturnToEditDiscounts() {
+			if (isDiscountsChanged) {
+				MessageBoxResult messageBoxResult = MessageBox.Show(
+					this, "Имеются изменения в текущих данных о скидках. Желаете сохранить изменения?",
+					"Сохранение", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+
+				if (messageBoxResult == MessageBoxResult.Cancel)
+					return true;
+
+				if (messageBoxResult == MessageBoxResult.Yes)
+					ButtonApplyChanges_Click(ButtonApplyChanges, new RoutedEventArgs());
+			}
+
+			return false;
+		}
+
+
 
 		private void ItemsDiscount_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) {
 			if (e.Action == NotifyCollectionChangedAction.Remove) {
@@ -103,18 +130,11 @@ namespace DiscountsForIC {
 			ButtonApplyChanges.IsEnabled = true;
 		}
 
-		private void ListViewSearchResults_SelectionChanged(object sender, SelectionChangedEventArgs e) {
-			if (isDiscountsChanged) {
-				MessageBoxResult messageBoxResult = MessageBox.Show(
-					this, "Имеются изменения в текущих данных о скидках. Желаете сохранить изменения?",
-					"Сохранение", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
 
-				if (messageBoxResult == MessageBoxResult.Cancel)
-					return;
 
-				if (messageBoxResult == MessageBoxResult.Yes)
-					ButtonApplyChanges_Click(ButtonApplyChanges, new RoutedEventArgs());
-			}
+		private async void ListViewSearchResults_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+			if (NeedToReturnToEditDiscounts())
+				return;
 
 			ItemsDiscount.Clear();
 			isDiscountsChanged = false;
@@ -128,13 +148,21 @@ namespace DiscountsForIC {
 			if (selectedItems == 0) 
 				return;
 
-			List<ItemDiscount> discounts = SystemDataHandle.SelectDiscount(ListViewSearchResults.SelectedItems);
+			List<ItemDiscount> discounts = new List<ItemDiscount>();
+			System.Collections.IList selectedItemsIc = ListViewSearchResults.SelectedItems;
+			Cursor = Cursors.Wait;
+
+
+			await Task.Run(() => {
+				discounts = SystemDataHandle.SelectDiscount(selectedItemsIc);
+			});
 
 			if (discounts.Count == 0)
 				ButtonAdd_Click(ButtonAdd, new RoutedEventArgs());
 
 			discounts.ForEach(ItemsDiscount.Add);
 			CheckBox_Click(null, null);
+			Cursor = Cursors.Arrow;
 		}
 
 		private void ListViewDiscounts_SelectionChanged(object sender, SelectionChangedEventArgs e) {
@@ -231,7 +259,7 @@ namespace DiscountsForIC {
 		}
 
 		
-		private void ButtonSearch_Click(object sender, RoutedEventArgs e) {
+		private async void ButtonSearch_Click(object sender, RoutedEventArgs e) {
 			string enteredText = TextBoxSearch.Text;
 
 			if (string.IsNullOrEmpty(enteredText) ||
@@ -243,13 +271,23 @@ namespace DiscountsForIC {
 
 			ItemsIC.Clear();
 
-			List<ItemIC> resultItems = SystemDataHandle.SearchForIC(enteredText);
+			Cursor = Cursors.Wait;
+
+			List<ItemIC> resultItems = new List<ItemIC>();
+
+			await Task.Run(() => {
+				resultItems = SystemDataHandle.SearchForIC(enteredText);
+			});
+			
+			
 			ButtonSelectAllIC.IsEnabled = resultItems.Count > 0;
 
 			if (resultItems.Count == 0) 
 				resultItems.Add(new ItemIC() { SHORTNAME = "По указаному запросу ничего не найдено" });
 
 			resultItems.ForEach(ItemsIC.Add);
+
+			Cursor = Cursors.Arrow;
 		}
 
 		private void ButtonAdd_Click(object sender, RoutedEventArgs e) {
@@ -257,13 +295,13 @@ namespace DiscountsForIC {
 			List<string> selectedContracts = new List<string>() { preview };
 
 			foreach (ItemIC item in ListViewSearchResults.SelectedItems)
-				selectedContracts.Add(item.SHORTNAME + " / " + item.JNAME + " / " + item.AGNUM);
+				selectedContracts.Add(GetContractPreview(item));
 
-			ItemsDiscount.Add(new ItemDiscount { Contract = selectedContracts, ContractPreview = preview });
+			ItemsDiscount.Add(new ItemDiscount(preview){ Contract = selectedContracts });
 			CheckBox_Click(null, null);
 		}
 
-		private void ButtonDelete_Click(object sender, RoutedEventArgs e) {
+		private async void ButtonDelete_Click(object sender, RoutedEventArgs e) {
 			if (MessageBox.Show(this,"Вы уверены, что хотите удалить выбранные записи?", "Удаление",
 				MessageBoxButton.YesNoCancel, MessageBoxImage.Question) != MessageBoxResult.Yes)
 				return;
@@ -273,13 +311,62 @@ namespace DiscountsForIC {
 			foreach (ItemDiscount item in ListViewDiscounts.SelectedItems)
 				itemsToDelete.Add(item);
 
+			Cursor = Cursors.Wait;
+
+			await Task.Run(() => {
+				SystemDataHandle.DeleteDiscounts(itemsToDelete);
+			});
+
 			foreach (ItemDiscount item in itemsToDelete)
 				ItemsDiscount.Remove(item);
+
+			Cursor = Cursors.Arrow;
 		}
 
-		private void ButtonApplyChanges_Click(object sender, RoutedEventArgs e) {
+		private async void ButtonApplyChanges_Click(object sender, RoutedEventArgs e) {
+			foreach (ItemDiscount itemDiscount in ItemsDiscount) {
+				if (!itemDiscount.IsChanged || itemDiscount.BZ_ADID != null)
+					continue;
+				
+				if (!itemDiscount.ContractPreview.Contains(" / ")) {
+					MessageBox.Show(this, "Имеются добавленные новые записи, у которых не выбран договор", 
+						"Отмена", MessageBoxButton.OK, MessageBoxImage.Warning);
+					return;
+				}
+
+				bool isFound = false;
+				foreach (ItemIC itemIC in ListViewSearchResults.SelectedItems) {
+					if (itemDiscount.ContractPreview.Equals(GetContractPreview(itemIC))) {
+						itemDiscount.JID = itemIC.JID;
+						itemDiscount.AGRID = itemIC.AGRID;
+						itemDiscount.FILIAL = itemIC.FILIAL;
+						isFound = true;
+						break;
+					}
+				}
+
+				if (!isFound) {
+					MessageBox.Show(this, "Не удалось определить данные договора для строки: " + itemDiscount.ContractPreview,
+						"Ошибка обработки", MessageBoxButton.OK, MessageBoxImage.Error);
+					return;
+				}
+			}
+
+			Cursor = Cursors.Wait;
+
+			await Task.Run(() => {
+				SystemDataHandle.UpdateOrInsertDiscount(ItemsDiscount.Where(i => i.IsChanged).ToList());
+			});
+
+			Cursor = Cursors.Arrow;
+
 			isDiscountsChanged = false;
 			((Button)sender).IsEnabled = false;
+			ListViewSearchResults_SelectionChanged(ListViewSearchResults, null);
+		}
+
+		private string GetContractPreview(ItemIC item) {
+			return item.SHORTNAME + " / " + item.JNAME + " / " + item.AGNUM;
 		}
 
 		private void ButtonSelectAllIC_Click(object sender, RoutedEventArgs e) {
@@ -289,6 +376,8 @@ namespace DiscountsForIC {
 		private void ButtonSelectAllDiscounts_Click(object sender, RoutedEventArgs e) {
 			ListViewDiscounts.SelectAll();
 		}
+
+
 
 		private void CheckBoxEndless_Click(object sender, RoutedEventArgs e) {
 			foreach (ItemDiscount item in ItemsDiscount)

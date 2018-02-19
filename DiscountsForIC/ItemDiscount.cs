@@ -11,12 +11,16 @@ namespace DiscountsForIC {
 		public event PropertyChangedEventHandler PropertyChanged;
 		private void NotifyPropertyChanged([CallerMemberName] String propertyName = "") {
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+			IsChanged = true;
 		}
 
-		public string BZ_ADID { get; set; } = string.Empty;
-		public string JNAME { get; set; } = string.Empty;
-		public string AGNUM { get; set; } = string.Empty;
-		public string SHORTNAME { get; set; } = string.Empty;
+		public bool IsChanged { get; private set; } = false;
+
+		public int? BZ_ADID { get; set; } = null;
+		public int JID { get; set; } = 0;
+		public int AGRID { get; set; } = 0;
+		public int FILIAL { get; set; } = 0;
+
 		public List<string> Contract { get; set; } = new List<string>();
 
 		private string contractPreview = string.Empty;
@@ -123,8 +127,8 @@ namespace DiscountsForIC {
 			}
 		}
 
-		private int? discount = null;
-		public int? DISCOUNT {
+		private int discount = 0;
+		public int DISCOUNT {
 			get {
 				return discount;
 			}
@@ -134,6 +138,33 @@ namespace DiscountsForIC {
 					NotifyPropertyChanged();
 				}
 			}
+		}
+
+		public ItemDiscount(string contractPreview) {
+			this.contractPreview = contractPreview;
+		}
+
+		public ItemDiscount(int? bz_adid, int jid, int agrid, int filial,
+			string contractPreview, bool endless,  DateTime beginDate, DateTime endDate, 
+			bool amountRelation, int? startAmount, int? finishAmount,
+			string comment, int discount) {
+			BZ_ADID = bz_adid;
+			JID = jid;
+			AGRID = agrid;
+			FILIAL = filial;
+			this.contractPreview = contractPreview;
+			this.endless = endless;
+			this.beginDate = beginDate;
+			this.endDate = endDate;
+			this.amountRelation = amountRelation;
+			this.startAmount = startAmount;
+			this.finishAmount = finishAmount;
+			this.comment = comment;
+			this.discount = discount;
+		}
+
+		public void ItemIsUpdated() {
+			IsChanged = false;
 		}
 	}
 }

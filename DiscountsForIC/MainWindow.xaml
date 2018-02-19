@@ -5,8 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DiscountsForIC"
         mc:Ignorable="d"
-        Title="MainWindow" Width="1100" Height="600" 
-        Background="#FFF0F0F0" WindowStartupLocation="CenterScreen" WindowState="Normal">
+        Title="Управление скидками для страховых компаний" Width="1100" Height="600" 
+        Background="#FFF0F0F0" WindowStartupLocation="CenterScreen" WindowState="Normal" Icon="icon.ico">
     <Window.Resources>
         <DataTemplate x:Key="ArrowUp">
             <DockPanel>
