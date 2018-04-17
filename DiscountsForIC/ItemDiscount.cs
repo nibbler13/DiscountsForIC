@@ -26,9 +26,11 @@ namespace DiscountsForIC {
 		private string contractPreview = string.Empty;
 		public string ContractPreview {
 			get {
+				Console.WriteLine("ContractPreview get: " + contractPreview);
 				return contractPreview;
 			}
 			set {
+				Console.WriteLine("ContractPreview set value: " + value);
 				if (value != contractPreview) {
 					contractPreview = value;
 					NotifyPropertyChanged();
@@ -140,27 +142,72 @@ namespace DiscountsForIC {
 			}
 		}
 
-		public ItemDiscount(string contractPreview) {
-			this.contractPreview = contractPreview;
+		private string shortName;
+		public string SHORTNAME {
+			get {
+				return shortName;
+			} set {
+				if (value != shortName) {
+					shortName = value;
+					NotifyPropertyChanged();
+				}
+			}
 		}
 
-		public ItemDiscount(int? bz_adid, int jid, int agrid, int filial,
-			string contractPreview, bool endless,  DateTime beginDate, DateTime endDate, 
+		private string jName;
+		public string JNAME {
+			get {
+				return jName;
+			} set {
+				if (value != jName) {
+					jName = value;
+					NotifyPropertyChanged();
+				}
+			}
+		}
+
+
+		private string agNum;
+		public string AGNUM {
+			get {
+				return agNum;
+			} set {
+				if (value != agNum) {
+					agNum = value;
+					NotifyPropertyChanged();
+				}
+			}
+		}
+
+		public ItemDiscount(string contractPreview) {
+			ContractPreview = contractPreview;
+		}
+
+		public ItemDiscount(string shortName, string jName, string agNum) { 
+			SHORTNAME = shortName;
+			JNAME = jName;
+			AGNUM = agNum;
+			ContractPreview = SHORTNAME + " / " + JNAME + " / " + AGNUM;
+		}
+
+		public ItemDiscount(
+			string shortName, string jName, string agNum, 
+			int? bz_adid, int jid, int agrid, int filial,
+			bool endless,  DateTime beginDate, DateTime endDate, 
 			bool amountRelation, int? startAmount, int? finishAmount,
-			string comment, int discount) {
+			string comment, int discount) : this(shortName, jName, agNum) {
 			BZ_ADID = bz_adid;
 			JID = jid;
 			AGRID = agrid;
 			FILIAL = filial;
-			this.contractPreview = contractPreview;
-			this.endless = endless;
-			this.beginDate = beginDate;
-			this.endDate = endDate;
-			this.amountRelation = amountRelation;
-			this.startAmount = startAmount;
-			this.finishAmount = finishAmount;
-			this.comment = comment;
-			this.discount = discount;
+			ENDLESS = endless;
+			BEGINDATE = beginDate;
+			ENDDATE = endDate;
+			AMOUNTRELATION = amountRelation;
+			STARTAMOUNT = startAmount;
+			FINISHAMOUNT = finishAmount;
+			COMMENT = comment;
+			DISCOUNT = discount;
 		}
 
 		public void ItemIsUpdated() {

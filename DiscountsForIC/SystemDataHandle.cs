@@ -24,12 +24,13 @@ namespace DiscountsForIC {
 		}
 
 		public static void DeleteDiscounts(List<ItemDiscount> itemsDiscount) {
-			List<int> bz_adids = new List<int>();
-			foreach (ItemDiscount item in itemsDiscount)
-				if (item.BZ_ADID.HasValue)
-					bz_adids.Add(item.BZ_ADID.Value);
+			foreach (ItemDiscount item in itemsDiscount) {
+				if (item.BZ_ADID is null)
+					continue;
 
-			firebirdClient.ExecuteUpdateQuery(sqlQueryDeleteDiscounts, new Dictionary<string, object> { { "@bz_adids", string.Join(",", bz_adids) } });
+				firebirdClient.ExecuteUpdateQuery(sqlQueryDeleteDiscounts,
+					new Dictionary<string, object> { { "@bz_adids", item.BZ_ADID } });
+			}
 		}
 
 		public static bool UpdateOrInsertDiscount(List<ItemDiscount> itemsDiscount) {
@@ -99,52 +100,98 @@ namespace DiscountsForIC {
 			return list;
 		}
 
+		public static List<ItemDiscount> SelectDiscoutByDates(DateTime dateBegin, DateTime? dateEnd) {
+			DataTable dataTable;
+
+			if (dateEnd.HasValue) {
+				dataTable = firebirdClient.GetDataTable(
+					Properties.Settings.Default.MisSqlSelectDiscountsByDates,
+					new Dictionary<string, string>() {
+						{ "@dateBegin", dateBegin.ToShortDateString() },
+						{ "@dateEnd", dateEnd.Value.ToShortDateString() }
+					});
+			} else {
+				dataTable = firebirdClient.GetDataTable(
+					Properties.Settings.Default.MisSqlSelectDiscountsByDateBegin,
+					new Dictionary<string, string>() {
+						{ "@dateBegin", dateBegin.ToShortDateString() }
+					});
+			}
+
+			return ParseDataTableDiscounts(dataTable);
+		}
+
 		public static List<ItemDiscount> SelectDiscount(System.Collections.IList selectedItemsIC) {
 			List<ItemDiscount> list = new List<ItemDiscount>();
 
 			string agrids = string.Empty;
 
-			foreach (ItemIC item in selectedItemsIC)
-				agrids += item.AGRID + ",";
+			for (int i = 0; i < selectedItemsIC.Count; i += 1400) {
+				for (int x = 0; x < i + 1400; x++) {
+					if (i + x >= selectedItemsIC.Count)
+						break;
 
-			agrids = agrids.TrimEnd(',');
+					agrids += (selectedItemsIC[i + x] as ItemIC).AGRID + ",";
+				}
 
-			DataTable dataTable = firebirdClient.GetDataTable(sqlQuerySelectDiscounts.Replace("@list", agrids), new Dictionary<string, string>() );
-			if (dataTable.Rows.Count == 0) 
-				return list;
+				agrids = agrids.TrimEnd(',');
+
+				DataTable dataTable = firebirdClient.GetDataTable(
+					sqlQuerySelectDiscounts.Replace("@list", agrids), 
+					new Dictionary<string, string>()
+				);
+
+				agrids = string.Empty;
+
+				list.AddRange(ParseDataTableDiscounts(dataTable));
+			}
+
+			return list;
+		}
+
+		private static List<ItemDiscount> ParseDataTableDiscounts(DataTable dataTable) {
+			List<ItemDiscount> list = new List<ItemDiscount>();
 
 			foreach (DataRow row in dataTable.Rows) {
 				try {
-					DateTime.TryParseExact(row["BEGINDATE"].ToString(), "dd.MM.yyyy H:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out DateTime begindate);
-					if (!DateTime.TryParseExact(row["ENDDATE"].ToString(), "dd.MM.yyyy H:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out DateTime enddate))
+					DateTime.TryParseExact(
+						row["BEGINDATE"].ToString(),
+						"dd.MM.yyyy H:mm:ss",
+						CultureInfo.InvariantCulture,
+						DateTimeStyles.AssumeLocal,
+						out DateTime begindate);
+
+					if (!DateTime.TryParseExact(
+						row["ENDDATE"].ToString(),
+						"dd.MM.yyyy H:mm:ss",
+						CultureInfo.InvariantCulture,
+						DateTimeStyles.AssumeLocal,
+						out DateTime enddate))
 						enddate = begindate;
 
 					Dictionary<string, int> values = new Dictionary<string, int> {
-						{ "STARTAMOUNT", 0 },
-						{ "FINISHAMOUNT", 0 },
-						{ "DISCOUNT", 0 },
-						{ "BZ_ADID", 0 },
-						{ "JID", 0 },
-						{ "AGRID", 0 },
-						{ "FILIAL", 0 }
-					};
+							{ "STARTAMOUNT", 0 },
+							{ "FINISHAMOUNT", 0 },
+							{ "DISCOUNT", 0 },
+							{ "BZ_ADID", 0 },
+							{ "JID", 0 },
+							{ "AGRID", 0 },
+							{ "FILIAL", 0 }
+						};
 
 					List<string> keys = values.Keys.ToList();
 					foreach (string key in keys)
 						if (int.TryParse(row[key].ToString(), out int value))
 							values[key] = value;
 
-					string shortName = row["SHORTNAME"].ToString();
-					string jName = row["JNAME"].ToString();
-					string agNum = row["AGNUM"].ToString();
-					string contractPreview = shortName + " / " + jName + " / " + agNum;
-
 					ItemDiscount itemDiscount = new ItemDiscount(
+						row["SHORTNAME"].ToString(),
+						row["JNAME"].ToString(),
+						row["AGNUM"].ToString(),
 						values["BZ_ADID"],
 						values["JID"],
 						values["AGRID"],
 						values["FILIAL"],
-						contractPreview,
 						row["ENDLESS"].ToString().Equals("1"),
 						begindate,
 						enddate,
@@ -154,15 +201,15 @@ namespace DiscountsForIC {
 						row["COMMENT"].ToString(),
 						values["DISCOUNT"]
 					);
-					
-					itemDiscount.Contract.Add(contractPreview);
+
+					itemDiscount.Contract.Add(itemDiscount.ContractPreview);
 					list.Add(itemDiscount);
 				} catch (Exception e) {
 					MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace, "Ошибка обработки данных",
 						MessageBoxButton.OK, MessageBoxImage.Error);
 				}
 			}
-			
+
 			return list;
 		}
 	}

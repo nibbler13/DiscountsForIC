@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -132,33 +133,56 @@ namespace DiscountsForIC {
 
 
 
-		private async void ListViewSearchResults_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+		private void ListViewSearchResults_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+			UpdateListViewDiscounts(sender);
+		}
+
+		private async void UpdateListViewDiscounts(object sender) {
 			if (NeedToReturnToEditDiscounts())
 				return;
 
 			ItemsDiscount.Clear();
 			isDiscountsChanged = false;
+			ButtonAdd.IsEnabled = false;
 			ButtonApplyChanges.IsEnabled = false;
-			int selectedItems = ListViewSearchResults.SelectedItems.Count;
-			ButtonAdd.IsEnabled = selectedItems > 0;
-			ButtonSelectAllDiscounts.IsEnabled = selectedItems > 0;
+			ButtonExportToExcel.IsEnabled = false;
 			ComboBoxEndlessIsChecked = false;
 			ComboBoxAmountRelationIsChecked = false;
 
-			if (selectedItems == 0) 
-				return;
-
 			List<ItemDiscount> discounts = new List<ItemDiscount>();
-			System.Collections.IList selectedItemsIc = ListViewSearchResults.SelectedItems;
 			Cursor = Cursors.Wait;
 
+			if (sender is ListView) {
+				int selectedItems = ListViewSearchResults.SelectedItems.Count;
+				ButtonAdd.IsEnabled = selectedItems > 0;
+				if (selectedItems == 0)
+					return;
 
-			await Task.Run(() => {
-				discounts = SystemDataHandle.SelectDiscount(selectedItemsIc);
-			});
+				System.Collections.IList selectedItemsIc = ListViewSearchResults.SelectedItems;
 
-			if (discounts.Count == 0)
-				ButtonAdd_Click(ButtonAdd, new RoutedEventArgs());
+				await Task.Run(() => {
+					discounts = SystemDataHandle.SelectDiscount(selectedItemsIc);
+				});
+			} else if (sender is Button) {
+				DateTime dateBegin = DatePickerDateBegin.SelectedDate.Value;
+				DateTime? dateEnd =
+					ComboBoxSelectDateEnd.IsChecked == false ?
+					DatePickerEnd.SelectedDate : null;
+
+				await Task.Run(() => {
+					discounts = SystemDataHandle.SelectDiscoutByDates(dateBegin, dateEnd);
+				});
+			}
+
+			if (discounts.Count == 0) {
+				if (sender is ListView)
+					ButtonAdd_Click(ButtonAdd, new RoutedEventArgs());
+				else if (sender is Button)
+					MessageBox.Show(this, "Нет данных за выбранный диапазон дат", "", MessageBoxButton.OK, MessageBoxImage.Information);
+			}
+
+			ButtonExportToExcel.IsEnabled = discounts.Count > 0;
+			ButtonSelectAllDiscounts.IsEnabled = discounts.Count > 0;
 
 			discounts.ForEach(ItemsDiscount.Add);
 			CheckBox_Click(null, null);
@@ -166,6 +190,11 @@ namespace DiscountsForIC {
 		}
 
 		private void ListViewDiscounts_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+			if (ListViewDiscounts.SelectedItems.Count == 1 && (ListViewDiscounts.SelectedItem as ItemDiscount).BZ_ADID is null) {
+				ButtonDelete.IsEnabled = false;
+				return;
+			}
+
 			ButtonDelete.IsEnabled = ListViewDiscounts.SelectedItems.Count > 0;
 		}
 
@@ -205,8 +234,7 @@ namespace DiscountsForIC {
 
 			string header = string.Empty;
 
-			Binding b = columnHeader.Column.DisplayMemberBinding as Binding;
-			if (b != null)
+			if (columnHeader.Column.DisplayMemberBinding is Binding b)
 				header = b.Path.Path;
 
 			ICollectionView resultDataView = CollectionViewSource.GetDefaultView((sender as ListView).ItemsSource);
@@ -392,6 +420,89 @@ namespace DiscountsForIC {
 		private void CheckBox_Click(object sender, RoutedEventArgs e) {
 			ComboBoxEndlessIsChecked = ItemsDiscount.Where(i => i.ENDLESS == false).ToList().Count == 0;
 			ComboBoxAmountRelationIsChecked = ItemsDiscount.Where(i => i.AMOUNTRELATION == false).ToList().Count == 0;
+		}
+
+		private async void ButtonExportToExcel_Click(object sender, RoutedEventArgs e) {
+			Cursor = Cursors.Wait;
+
+			string result = string.Empty;
+			await Task.Run(() => {
+				result = NpoiExcel.WriteItemsDiscountToExcel(ItemsDiscount.ToList());
+			});
+
+			if (File.Exists(result)) {
+				Process.Start(result);
+			} else {
+				MessageBox.Show(this, result, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+			}
+
+			Cursor = Cursors.Arrow;
+		}
+
+		private void ComboBoxSelectDateEnd_Checked(object sender, RoutedEventArgs e) {
+			SetDatePickerEndEnable();
+		}
+
+		private void ComboBoxSelectDateEnd_Unchecked(object sender, RoutedEventArgs e) {
+			SetDatePickerEndEnable();
+		}
+
+		public void SetDatePickerEndEnable() {
+			if (DatePickerEnd == null)
+				return;
+
+			DatePickerEnd.IsEnabled =
+				ComboBoxSelectDateEnd.IsChecked != null &&
+				ComboBoxSelectDateEnd.IsChecked == false;
+		}
+
+		private void ButtonSearchByDate_Click(object sender, RoutedEventArgs e) {
+			if (DatePickerDateBegin.SelectedDate == null ||
+				(ComboBoxSelectDateEnd.IsChecked == false && DatePickerEnd.SelectedDate == null)) {
+				MessageBox.Show(this, "Выберите корректный диапазон дат", "", MessageBoxButton.OK, MessageBoxImage.Information);
+				return;
+			}
+
+			UpdateListViewDiscounts(sender);
+		}
+
+		private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+			if (e.Source is TabControl) {
+				if (TabControlSearch.SelectedIndex == 0) {
+					if (ListViewSearchResults.SelectedItems.Count > 0)
+						UpdateListViewDiscounts(ListViewSearchResults);
+					else
+						ClearListViewDiscounts();
+				} else if (TabControlSearch.SelectedIndex == 1) {
+					if ((DatePickerDateBegin.SelectedDate != null &&
+						ComboBoxSelectDateEnd.IsChecked == true) ||
+						(ComboBoxSelectDateEnd.IsChecked == false &&
+						DatePickerEnd.SelectedDate != null &&
+						DatePickerDateBegin.SelectedDate != null))
+						UpdateListViewDiscounts(ButtonSearchByDate);
+					else
+						ClearListViewDiscounts();
+				}
+			}
+		}
+
+		private void ClearListViewDiscounts() {
+			if (NeedToReturnToEditDiscounts())
+				return;
+
+			List<Button> buttonsToDisable = new List<Button>() {
+				ButtonSelectAllDiscounts,
+				ButtonAdd,
+				ButtonApplyChanges,
+				ButtonDelete,
+				ButtonExportToExcel
+			};
+
+			foreach (Button button in buttonsToDisable)
+				button.IsEnabled = false;
+
+			ItemsDiscount.Clear();
+			isDiscountsChanged = false;
 		}
 	}
 }

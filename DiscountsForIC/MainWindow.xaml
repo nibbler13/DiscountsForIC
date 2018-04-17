@@ -5,8 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DiscountsForIC"
         mc:Ignorable="d"
-        Title="Управление скидками для страховых компаний" Width="1100" Height="600" 
-        Background="#FFF0F0F0" WindowStartupLocation="CenterScreen" WindowState="Normal" Icon="icon.ico">
+        Title="Управление скидками для страховых компаний" 
+        Width="1100" 
+        Height="600" 
+        Background="#FFF0F0F0" 
+        WindowStartupLocation="CenterScreen" 
+        WindowState="Normal"
+        Icon="Media/icon.ico">
     <Window.Resources>
         <DataTemplate x:Key="ArrowUp">
             <DockPanel>
@@ -29,63 +34,183 @@
 
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="2*" MinHeight="200"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="1*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Grid Margin="10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            
-            <TextBlock Text="Наименование СК / договор №:" TextAlignment="Center"/>
-            <TextBox Grid.Column="1" Margin="10,0" x:Name="TextBoxSearch" KeyDown="TextBoxSearch_KeyDown" TabIndex="1"/>
-            <Button Grid.Column="2" Content="Поиск" Width="80" x:Name="ButtonSearch" Click="ButtonSearch_Click"/>
-        </Grid>
+        <TabControl Background="#FFF0F0F0" 
+                    SelectionChanged="TabControl_SelectionChanged"
+                    x:Name="TabControlSearch">
+            <TabItem Header="Поиск по названию СК / № договора">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Margin="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="Наименование СК / договор №:" 
+                                   TextAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" 
+                                 Margin="10,0"
+                                 x:Name="TextBoxSearch"
+                                 KeyDown="TextBoxSearch_KeyDown"
+                                 TabIndex="1"
+                                 VerticalAlignment="Center"/>
+                        
+                        <Button Grid.Column="2"
+                                Width="100"
+                                Height="40"
+                                x:Name="ButtonSearch"
+                                Click="ButtonSearch_Click" 
+                                VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="Media/VSO_Search_16x.png" Stretch="None"/>
+                                <TextBlock Text="Поиск" Margin="10,0,0,0"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <TextBlock Grid.Row="1" 
+                               Text="Результаты поиска:" 
+                               Margin="10,10,10,0" 
+                               TextAlignment="Center"
+                               VerticalAlignment="Center"/>
+                    
+                    <Button Grid.Row="1" 
+                            HorizontalAlignment="Right" 
+                            Margin="10,10,10,0" 
+                            Width="100" 
+                            Height="40"
+                            x:Name="ButtonSelectAllIC" 
+                            IsEnabled="False"
+                            Click="ButtonSelectAllIC_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Stretch="None" Source="Media/SelectAll_16x.png"/>
+                            <TextBlock Text="Выделить&#x0a;все" Margin="10,0,0,0" TextAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <ListView Grid.Row="2"
+                              Margin="10,5,10,10"
+                              x:Name="ListViewSearchResults" 
+                              SelectionChanged="ListViewSearchResults_SelectionChanged"
+                              ItemsSource="{Binding ItemsIC}"
+                              GridViewColumnHeader.Click="ListViewHeader_Click">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="  Филиал  " DisplayMemberBinding="{Binding SHORTNAME}"/>
+                                <GridViewColumn Header="  Наименование СК  " DisplayMemberBinding="{Binding JNAME}"/>
+                                <GridViewColumn Header="  Договор №  " DisplayMemberBinding="{Binding AGNUM}"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Поиск по дате">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+
+                    <Grid VerticalAlignment="Bottom" HorizontalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="Дата начала:" 
+                                   VerticalAlignment="Center"/>
+
+                        <DatePicker Grid.Column="1"
+                                    Margin="10,0,0,0"
+                                    x:Name="DatePickerDateBegin"
+                                    VerticalAlignment="Center"/>
+
+                        <CheckBox Content="Без учета даты окончания" 
+                                  Grid.Column="2"
+                                  Margin="20,0,0,0"
+                                  x:Name="ComboBoxSelectDateEnd"
+                                  VerticalAlignment="Center"
+                                  IsChecked="True"
+                                  Checked="ComboBoxSelectDateEnd_Checked"
+                                  Unchecked="ComboBoxSelectDateEnd_Unchecked"/>
+
+                        <TextBlock Text="Дата окончания:" 
+                                    Margin="20,0,0,0"
+                                   Grid.Column="3"
+                                   VerticalAlignment="Center"
+                                   x:Name="TextBlockDateEnd"
+                                   IsEnabled="False"/>
+
+                        <DatePicker Grid.Column="4"
+                                    Margin="10,0,0,0"
+                                    x:Name="DatePickerEnd"
+                                    IsEnabled="False"
+                                    VerticalAlignment="Center"/>
+                    </Grid>
+                    
+                    <Button Grid.Row="4" 
+                            Grid.Column="1" 
+                            Grid.ColumnSpan="2"
+                            Width="100"
+                            Height="40"
+                            Margin="0,10,0,0"
+                            x:Name="ButtonSearchByDate"
+                            Click="ButtonSearchByDate_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="Media/VSO_Search_16x.png" Stretch="None"/>
+                            <TextBlock Text="Поиск" Margin="10,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <GridSplitter Grid.Row="1" 
+                      VerticalAlignment="Top" 
+                      HorizontalAlignment="Stretch"
+                      Height="2" 
+                      Background="#FFC8C8C8" 
+                      Margin="10,0" 
+                      ResizeDirection="Rows"
+                      ResizeBehavior="PreviousAndNext"/>
+
+        <TextBlock Grid.Row="1" 
+                   Text="Информация по скидкам:" 
+                   Margin="10,10,10,0" 
+                   TextAlignment="Center"
+                   VerticalAlignment="Center"/>
         
-        <TextBlock Grid.Row="1" Text="Результаты поиска:" Margin="10,10,10,0" TextAlignment="Center"/>
-        <Button Content="Выбрать все" 
-                Grid.Row="1" 
+        <Button Grid.Row="1" 
                 HorizontalAlignment="Right" 
                 Margin="10,10,10,0" 
-                Width="80" 
-                x:Name="ButtonSelectAllIC" 
-                IsEnabled="False"
-                Click="ButtonSelectAllIC_Click"/>
-
-        <ListView Grid.Row="2" Margin="10,5,10,10" x:Name="ListViewSearchResults" 
-                  SelectionChanged="ListViewSearchResults_SelectionChanged" ItemsSource="{Binding ItemsIC}"
-                  GridViewColumnHeader.Click="ListViewHeader_Click">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn Header="  Филиал  " DisplayMemberBinding="{Binding SHORTNAME}"/>
-                    <GridViewColumn Header="  Наименование СК  " DisplayMemberBinding="{Binding JNAME}"/>
-                    <GridViewColumn Header="  Договор №  " DisplayMemberBinding="{Binding AGNUM}"/>
-                </GridView>
-            </ListView.View>
-        </ListView>
-
-        <GridSplitter Grid.Row="3" VerticalAlignment="Top" HorizontalAlignment="Stretch" Height="2" 
-                      Background="#FFC8C8C8" Margin="10,0" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext"/>
-
-        <TextBlock Grid.Row="3" Text="Информация по скидкам для выбранных договоров:" Margin="10,10,10,0" TextAlignment="Center"/>
-        <Button Content="Выбрать все" 
-                Grid.Row="3" 
-                HorizontalAlignment="Right" 
-                Margin="10,10,10,0" 
-                Width="80" 
+                Width="100" 
+                Height="40"
                 x:Name="ButtonSelectAllDiscounts" 
                 IsEnabled="False"
-                Click="ButtonSelectAllDiscounts_Click"/>
+                Click="ButtonSelectAllDiscounts_Click">
+            <StackPanel Orientation="Horizontal">
+                <Image Stretch="None" Source="Media/SelectAll_16x.png"/>
+                <TextBlock Text="Выделить&#x0a;все" Margin="10,0,0,0" TextAlignment="Center"/>
+            </StackPanel>
+        </Button>
 
-        <ListView Grid.Row="4" 
+        <ListView Grid.Row="2" 
                   Margin="10,5,10,10" 
                   x:Name="ListViewDiscounts" 
                   ItemsSource="{Binding ItemsDiscount}" 
@@ -166,7 +291,7 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-
+<!--
                     <GridViewColumn>
                         <GridViewColumn.HeaderTemplate>
                             <DataTemplate>
@@ -241,7 +366,7 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-
+-->
                     <GridViewColumn>
                         <GridViewColumn.HeaderTemplate>
                             <DataTemplate>
@@ -286,7 +411,7 @@
             </ListView.View>
         </ListView>
 
-        <Grid Grid.Row="5" Margin="10">
+        <Grid Grid.Row="3" Margin="10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="80"/>
                 <ColumnDefinition Width="*"/>
@@ -295,27 +420,67 @@
             
             <StackPanel Orientation="Horizontal" Grid.Column="1" 
                         HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Button Content="Добавить" Margin="0,0,10,0" Width="80" 
-                        x:Name="ButtonAdd" IsEnabled="False" Click="ButtonAdd_Click"/>
-                <Button Content="Удалить" Margin="10,0,0,0" Width="80" 
-                        x:Name="ButtonDelete" IsEnabled="False" Click="ButtonDelete_Click" Background="Red" Foreground="White"/>
-                <Button Content="Сохранить изменения" Margin="40,0,0,0" 
-                        Width="180" x:Name="ButtonApplyChanges" IsEnabled="False" Click="ButtonApplyChanges_Click" Background="LightGreen"/>
+                <Button Width="100" 
+                        x:Name="ButtonAdd"
+                        IsEnabled="False"
+                        Click="ButtonAdd_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="Media/VSO_Add_16x.png" Stretch="None"/>
+                        <TextBlock Text="Добавить" Margin="10,0,0,0"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Margin="20,0,0,0" 
+                        Width="100" 
+                        x:Name="ButtonApplyChanges" 
+                        IsEnabled="False" 
+                        Click="ButtonApplyChanges_Click" 
+                        Background="LightGreen">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="Media/VSO_Save_16x.png" Stretch="None"/>
+                        <TextBlock Text="Сохранить&#x0a;изменения" Margin="10,0,0,0" TextAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Margin="20,0,0,0" 
+                        Width="100" 
+                        x:Name="ButtonDelete"
+                        IsEnabled="False"
+                        Click="ButtonDelete_Click"
+                        Background="#FFFF8181">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="Media/VSO_Remove_16x.png" Stretch="None"/>
+                        <TextBlock Text="Удалить" Margin="10,0,0,0"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Margin="20,0,0,0" 
+                        IsEnabled="False" 
+                        x:Name="ButtonExportToExcel"
+                        Width="100" 
+                        Height="40"
+                        HorizontalContentAlignment="Center"
+                        Click="ButtonExportToExcel_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="Media/ExcelWorksheetView_16x.png" Stretch="None"/>
+                        <TextBlock Text="Выгрузка&#xA;в Excel" Margin="10,0,0,0" TextAlignment="Center"/>
+                    </StackPanel>
+                </Button>
             </StackPanel>
 
-            <Image Source="ButterflyClear.png" Grid.Column="2"
+            <Image Source="Media/ButterflyClear.png" Grid.Column="2"
                StretchDirection="DownOnly" MaxWidth="80" MaxHeight="80"
                VerticalAlignment="Bottom"
                HorizontalAlignment="Right"/>
         </Grid>
 
-        <Grid Grid.Row="6" Grid.ColumnSpan="2" Height="10" VerticalAlignment="Bottom">
+        <Grid Grid.Row="4" Height="10" VerticalAlignment="Bottom">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Image Source="BottomLineTemplate.png" Stretch="UniformToFill" />
-            <Image Grid.Column="1" Source="BottomLineContinuesClear.png"/>
+            <Image Source="Media/BottomLineTemplate.png" Stretch="UniformToFill" />
+            <Image Grid.Column="1" Source="Media/BottomLineContinuesClear.png"/>
         </Grid>
     </Grid>
 </Window>
