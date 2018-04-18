@@ -357,8 +357,13 @@ namespace DiscountsForIC {
 					continue;
 				
 				if (!itemDiscount.ContractPreview.Contains(" / ")) {
-					MessageBox.Show(this, "Имеются добавленные новые записи, у которых не выбран договор", 
+					MessageBox.Show(this, "Имеются новые записи, у которых не выбран договор", 
 						"Отмена", MessageBoxButton.OK, MessageBoxImage.Warning);
+					return;
+				}
+
+				if (itemDiscount.DISCOUNT < 1) {
+					MessageBox.Show(this, "Имеются записи, у которых не задан размер скидки", "Отмена", MessageBoxButton.OK, MessageBoxImage.Warning);
 					return;
 				}
 
