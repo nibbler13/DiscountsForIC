@@ -15,11 +15,12 @@ namespace DiscountsForIC {
 		}
 
 		public bool IsChanged { get; private set; } = false;
+		public bool IsNewAdded { get; set; } = false;
 
 		public int? BZ_ADID { get; set; } = null;
-		public int JID { get; set; } = 0;
-		public int AGRID { get; set; } = 0;
-		public int FILIAL { get; set; } = 0;
+		public int JID { get; set; } = -1;
+		public int AGRID { get; set; } = -1;
+		public int FILIAL { get; set; } = -1;
 
 		public List<string> Contract { get; set; } = new List<string>();
 

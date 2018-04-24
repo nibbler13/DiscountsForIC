@@ -8,11 +8,12 @@ using System.Threading.Tasks;
 using System.Windows;
 
 namespace DiscountsForIC {
-    class SystemDataHandle {
+    static class SystemDataHandle {
 		private static string sqlQuerySearch = Properties.Settings.Default.MisSqlSearch;
 		private static string sqlQuerySelectDiscounts = Properties.Settings.Default.MisSqlSelectDiscounts;
 		private static string sqlQueryUpdateOrInsertDiscount = Properties.Settings.Default.MisSqlUpdateOrInsertDiscount;
 		private static string sqlQueryDeleteDiscounts = Properties.Settings.Default.MisSqlDeleteDiscounts;
+		private static string sqlQuerySelectFilials = Properties.Settings.Default.MisSqlSelectFilials;
 		private static SystemFirebirdClient firebirdClient = new SystemFirebirdClient(
 			Properties.Settings.Default.MisDbAddress,
 			Properties.Settings.Default.MisDbName,
@@ -63,7 +64,7 @@ namespace DiscountsForIC {
 			return true;
 		}
 
-		public static List<ItemIC> SearchForIC(string text) {
+		public static List<ItemIC> SearchForIC(string text, List<ItemFilial> itemsFilial, bool displayClosedContracts) {
 			List<ItemIC> list = new List<ItemIC>();
 			
 			DataTable dataTable = firebirdClient.GetDataTable(sqlQuerySearch, new Dictionary<string, string> { { "@entered", text } });
@@ -82,15 +83,41 @@ namespace DiscountsForIC {
 					foreach (string key in keys)
 						if (int.TryParse(row[key].ToString(), out int value))
 							values[key] = value;
-					
-					list.Add(new ItemIC() {
+
+					DateTime.TryParse(row["AGDATE"].ToString(), out DateTime agdate);
+					DateTime.TryParse(row["EDATE"].ToString(), out DateTime dateTime);
+					bool isClosed = row["ISCLOSE"].ToString().Equals("1");
+					DateTime? eDate = null;
+					if (dateTime != new DateTime())
+						eDate = dateTime;
+
+					ItemIC itemIC = new ItemIC() {
 						FILIAL = values["FILIAL"],
 						SHORTNAME = row["SHORTNAME"].ToString(),
 						JNAME = row["JNAME"].ToString(),
 						AGNUM = row["AGNUM"].ToString(),
 						JID = values["JID"],
-						AGRID = values["AGRID"]
-					});
+						AGRID = values["AGRID"],
+						AGDATE = agdate,
+						EDATE = eDate,
+						ISCLOSE = isClosed
+					};
+
+					if (!displayClosedContracts) {
+						if (itemIC.ISCLOSE)
+							continue;
+
+						if (itemIC.EDATE.HasValue && itemIC.EDATE.Value < DateTime.Now)
+							continue;
+					}
+
+					bool isIcFilialInList = itemsFilial.Any(x => x.ID == itemIC.FILIAL);
+					bool isMoscowInList = itemsFilial.Any(x => x.FullName.ToLower().Contains("москва"));
+
+					if (!isIcFilialInList && !(isMoscowInList && itemIC.FILIAL == 0))
+						continue;
+
+					list.Add(itemIC);
 				} catch (Exception e) {
 					MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace, "Ошибка обработки данных",
 						MessageBoxButton.OK, MessageBoxImage.Error);
@@ -100,25 +127,10 @@ namespace DiscountsForIC {
 			return list;
 		}
 
-		public static List<ItemDiscount> SelectDiscoutByDates(DateTime dateBegin, DateTime? dateEnd) {
-			DataTable dataTable;
-
-			if (dateEnd.HasValue) {
-				dataTable = firebirdClient.GetDataTable(
-					Properties.Settings.Default.MisSqlSelectDiscountsByDates,
-					new Dictionary<string, string>() {
-						{ "@dateBegin", dateBegin.ToShortDateString() },
-						{ "@dateEnd", dateEnd.Value.ToShortDateString() }
-					});
-			} else {
-				dataTable = firebirdClient.GetDataTable(
-					Properties.Settings.Default.MisSqlSelectDiscountsByDateBegin,
-					new Dictionary<string, string>() {
-						{ "@dateBegin", dateBegin.ToShortDateString() }
-					});
-			}
-
-			return ParseDataTableDiscounts(dataTable);
+		public static List<ItemDiscount> SelectDiscoutByDates(string sqlQuery, Dictionary<string, string> parameters, 
+			List<ItemFilial> itemsFilial, bool showClosedContracts) {
+			DataTable dataTable = firebirdClient.GetDataTable(sqlQuery, parameters);
+			return ParseDataTableDiscounts(dataTable, itemsFilial, showClosedContracts);
 		}
 
 		public static List<ItemDiscount> SelectDiscount(System.Collections.IList selectedItemsIC) {
@@ -149,7 +161,7 @@ namespace DiscountsForIC {
 			return list;
 		}
 
-		private static List<ItemDiscount> ParseDataTableDiscounts(DataTable dataTable) {
+		private static List<ItemDiscount> ParseDataTableDiscounts(DataTable dataTable, List<ItemFilial> itemsFilial = null, bool showClosedContracts = false) {
 			List<ItemDiscount> list = new List<ItemDiscount>();
 
 			foreach (DataRow row in dataTable.Rows) {
@@ -168,6 +180,14 @@ namespace DiscountsForIC {
 						DateTimeStyles.AssumeLocal,
 						out DateTime enddate))
 						enddate = begindate;
+
+					DateTime? edate = null;
+					if (dataTable.Columns.Contains("EDATE") && DateTime.TryParse(row["EDATE"].ToString(), out DateTime dateTimeEdate))
+						edate = dateTimeEdate;
+
+					bool isClose = false;
+					if (dataTable.Columns.Contains("ISCLOSE"))
+						isClose = row["ISCLOSE"].ToString().Equals("1");
 
 					Dictionary<string, int> values = new Dictionary<string, int> {
 							{ "STARTAMOUNT", 0 },
@@ -202,6 +222,22 @@ namespace DiscountsForIC {
 						values["DISCOUNT"]
 					);
 
+					if (itemsFilial != null) {
+						bool isIcFilialInList = itemsFilial.Any(x => x.ID == itemDiscount.FILIAL);
+						bool isMoscowInList = itemsFilial.Any(x => x.FullName.ToLower().Contains("москва"));
+
+						if (!isIcFilialInList && !(isMoscowInList && itemDiscount.FILIAL == 0))
+							continue;
+					}
+
+					if (!showClosedContracts) {
+						if (isClose)
+							continue;
+
+						if (edate.HasValue && edate.Value < DateTime.Now)
+							continue;
+					}
+
 					itemDiscount.Contract.Add(itemDiscount.ContractPreview);
 					list.Add(itemDiscount);
 				} catch (Exception e) {
@@ -211,6 +247,36 @@ namespace DiscountsForIC {
 			}
 
 			return list;
+		}
+
+		public static List<ItemFilial> GetFilials() {
+			List<ItemFilial> itemsFilial = new List<ItemFilial>();
+
+			DataTable dataTable = firebirdClient.GetDataTable(sqlQuerySelectFilials, new Dictionary<string, string>());
+			if (dataTable.Rows.Count == 0)
+				return itemsFilial;
+
+			foreach (DataRow row in dataTable.Rows) {
+				try {
+					string id = row["FILID"].ToString();
+					string shortName = row["SHORTNAME"].ToString();
+					string fullName = row["FULLNAME"].ToString();
+
+					ItemFilial itemFilial = new ItemFilial() {
+						ID = int.Parse(id),
+						ShortName = shortName,
+						FullName = fullName
+					};
+
+					itemsFilial.Add(itemFilial);
+				} catch (Exception e) {
+					Console.WriteLine(e.Message + Environment.NewLine + e.StackTrace);
+				}
+			}
+
+			itemsFilial = itemsFilial.OrderBy(p => p.ShortName).ToList();
+
+			return itemsFilial;
 		}
 	}
 }

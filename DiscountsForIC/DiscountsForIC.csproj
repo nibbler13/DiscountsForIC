@@ -78,12 +78,34 @@
     </ApplicationDefinition>
     <Compile Include="BoolToEnableConverter.cs" />
     <Compile Include="ItemDiscount.cs" />
+    <Compile Include="ItemFilial.cs" />
     <Compile Include="ItemIC.cs" />
     <Compile Include="BoolToVisibilityConverter.cs" />
     <Compile Include="NpoiExcel.cs" />
+    <Compile Include="PageSearchByDate.xaml.cs">
+      <DependentUpon>PageSearchByDate.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="PageSearchByNameOrNumber.xaml.cs">
+      <DependentUpon>PageSearchByNameOrNumber.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="PageSelectFilial.xaml.cs">
+      <DependentUpon>PageSelectFilial.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="PageSelectOperation.xaml.cs">
+      <DependentUpon>PageSelectOperation.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="PageSelectSearch.xaml.cs">
+      <DependentUpon>PageSelectSearch.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="PageViewDiscounts.xaml.cs">
+      <DependentUpon>PageViewDiscounts.xaml</DependentUpon>
+    </Compile>
     <Compile Include="PopValidationRule.cs" />
     <Compile Include="SystemDataHandle.cs" />
     <Compile Include="SystemFirebirdClient.cs" />
+    <Compile Include="WindowMain.xaml.cs">
+      <DependentUpon>WindowMain.xaml</DependentUpon>
+    </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -96,6 +118,34 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="PageSearchByDate.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PageSearchByNameOrNumber.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PageSelectFilial.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PageSelectOperation.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PageSelectSearch.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PageViewDiscounts.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="WindowMain.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -144,6 +194,24 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Media\VSO_Search_16x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Media\Return_grey_16x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Media\VSO_Next_16x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Media\VSO_Edit_16x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Media\Edit_grey.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Media\Calendar_32x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Media\Contract_256x.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

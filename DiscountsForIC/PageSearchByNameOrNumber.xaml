@@ -1,0 +1,158 @@
+﻿<Page x:Class="DiscountsForIC.PageSearchByNameOrNumber"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:DiscountsForIC"
+      mc:Ignorable="d" 
+      d:DesignHeight="450"
+      d:DesignWidth="800"
+      Title="PageSearchByNameOrNumber">
+    <Page.Resources>
+        <DataTemplate x:Key="ArrowUp">
+            <DockPanel>
+                <TextBlock HorizontalAlignment="Center" Text="{Binding}" />
+                <Path VerticalAlignment="Center" Fill="Black" Data="M 5,5 15,5 10,0 5,5" />
+            </DockPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="ArrowDown">
+            <DockPanel>
+                <TextBlock HorizontalAlignment="Center" Text="{Binding}" />
+                <Path VerticalAlignment="Center" Fill="Black" Data="M 5,0 10,5 15,0 5,0" />
+            </DockPanel>
+        </DataTemplate>
+    </Page.Resources>
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Выбранные филиалы: "
+                   x:Name="TextBlockSelectedFilials"
+                   HorizontalAlignment="Center"
+                   TextWrapping="Wrap"
+                   TextAlignment="Center"/>
+
+        <CheckBox Grid.Row="1"
+                  Content="Показывать закрытые договора"
+                  IsChecked="False"
+                  x:Name="CheckBoxUseClosedContracts"
+                  Grid.ColumnSpan="3"
+                  HorizontalAlignment="Center"
+                  Margin="0,10,0,0"
+                  Checked="CheckBoxUseClosedContracts_Checked"
+                  Unchecked="CheckBoxUseClosedContracts_Unchecked"/>
+
+        <Grid Margin="10" Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Text="Наименование СК / договор №:" 
+                                   TextAlignment="Center"
+                                   VerticalAlignment="Center"/>
+            <TextBox Grid.Column="1" 
+                                 Margin="10,0"
+                                 x:Name="TextBoxSearch"
+                                 KeyDown="TextBoxSearch_KeyDown"
+                                 TabIndex="1"
+                                 VerticalAlignment="Center"/>
+
+            <Button Grid.Column="2"
+                                Width="100"
+                                Height="40"
+                                x:Name="ButtonSearch"
+                                Click="ButtonSearch_Click" 
+                                VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="Media/VSO_Search_16x.png" Stretch="None"/>
+                    <TextBlock Text="Поиск" Margin="10,0,0,0"/>
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <TextBlock Grid.Row="3" 
+                               Text="Результаты поиска:" 
+                               Margin="10,10,10,0" 
+                               TextAlignment="Center"
+                               VerticalAlignment="Center"/>
+
+        <Button Grid.Row="3" 
+                            HorizontalAlignment="Right" 
+                            Margin="10,10,10,0" 
+                            Width="100" 
+                            Height="40"
+                            x:Name="ButtonSelectAllIC" 
+                            IsEnabled="False"
+                            Click="ButtonSelectAllIC_Click">
+            <StackPanel Orientation="Horizontal">
+                <Image Stretch="None" Source="Media/SelectAll_16x.png"/>
+                <TextBlock Text="Выделить&#x0a;все"
+                           Margin="10,0,0,0" 
+                           TextAlignment="Center"/>
+            </StackPanel>
+        </Button>
+
+        <ListView Grid.Row="4"
+                              Margin="10,5,10,10"
+                              x:Name="ListViewSearchResults" 
+                              SelectionChanged="ListViewSearchResults_SelectionChanged"
+                              ItemsSource="{Binding ItemsIC}"
+                              GridViewColumnHeader.Click="ListViewHeader_Click">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="  Филиал  " 
+                                    DisplayMemberBinding="{Binding SHORTNAME}"/>
+                    <GridViewColumn Header="  Наименование СК  " 
+                                    DisplayMemberBinding="{Binding JNAME}"/>
+                    <GridViewColumn Header="  Договор №  " 
+                                    DisplayMemberBinding="{Binding AGNUM}"/>
+                    <GridViewColumn Header="  Дата начала  " 
+                                    DisplayMemberBinding="{Binding AGDATESTR}"/>
+                    <GridViewColumn Header="  Дата окончания  " 
+                                    DisplayMemberBinding="{Binding EDATESTR}"/>
+                    <GridViewColumn Header="  Закрыт  " 
+                                    DisplayMemberBinding="{Binding ISCLOSED}"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+        <Grid Grid.Row="5" Margin="20,10,20,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <Button Width="100"
+                    Height="40"
+                    HorizontalAlignment="Left"
+                    x:Name="ButtonBack"
+                    Click="ButtonBack_Click">
+                <StackPanel Orientation="Horizontal">
+                    <Image Stretch="None" Source="Media/Return_grey_16x.png"/>
+                    <TextBlock Text="Назад" Margin="10,0,0,0"/>
+                </StackPanel>
+            </Button>
+
+            <Button Grid.Column="1"
+                    Width="100"
+                    Height="40"
+                    HorizontalAlignment="Right"
+                    x:Name="ButtonNext"
+                    Click="ButtonNext_Click">
+                <StackPanel Orientation="Horizontal">
+                    <Image Stretch="None" Source="Media/VSO_Next_16x.png"/>
+                    <TextBlock Text="Далее" Margin="10,0,0,0"/>
+                </StackPanel>
+            </Button>
+        </Grid>
+    </Grid>
+</Page>
