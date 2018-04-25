@@ -121,6 +121,8 @@
                                     DisplayMemberBinding="{Binding EDATESTR}"/>
                     <GridViewColumn Header="  Закрыт  " 
                                     DisplayMemberBinding="{Binding ISCLOSED}"/>
+                    <GridViewColumn Header="  Автопролонгация  " 
+                                    DisplayMemberBinding="{Binding AUTOPROLONGATION}"/>
                 </GridView>
             </ListView.View>
         </ListView>

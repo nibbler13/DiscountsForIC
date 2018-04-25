@@ -15,6 +15,16 @@ namespace DiscountsForIC {
 		public DateTime AGDATE { get; set; }
 		public DateTime? EDATE { get; set; } = null;
 		public bool ISCLOSE { get; set; } = false;
+		public bool AUTOPROLONG { get; set; } = false;
+
+		public string AUTOPROLONGATION {
+			get {
+				if (AGRID == -1)
+					return string.Empty;
+
+				return AUTOPROLONG ? "Да" : "Нет";
+			}
+		}
 
 		public string ISCLOSED {
 			get {

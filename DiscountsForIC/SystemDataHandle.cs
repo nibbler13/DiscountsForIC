@@ -87,6 +87,7 @@ namespace DiscountsForIC {
 					DateTime.TryParse(row["AGDATE"].ToString(), out DateTime agdate);
 					DateTime.TryParse(row["EDATE"].ToString(), out DateTime dateTime);
 					bool isClosed = row["ISCLOSE"].ToString().Equals("1");
+					bool autoProlong = row["AUTOPROLONG"].ToString().Equals("1");
 					DateTime? eDate = null;
 					if (dateTime != new DateTime())
 						eDate = dateTime;
@@ -100,21 +101,22 @@ namespace DiscountsForIC {
 						AGRID = values["AGRID"],
 						AGDATE = agdate,
 						EDATE = eDate,
-						ISCLOSE = isClosed
+						ISCLOSE = isClosed,
+						AUTOPROLONG = autoProlong
 					};
 
 					if (!displayClosedContracts) {
 						if (itemIC.ISCLOSE)
 							continue;
 
-						if (itemIC.EDATE.HasValue && itemIC.EDATE.Value < DateTime.Now)
+						if (itemIC.EDATE.HasValue && (itemIC.EDATE.Value < DateTime.Now && !autoProlong))
 							continue;
 					}
 
 					bool isIcFilialInList = itemsFilial.Any(x => x.ID == itemIC.FILIAL);
-					bool isMoscowInList = itemsFilial.Any(x => x.FullName.ToLower().Contains("москва"));
+					bool isMoscowInList = itemsFilial.Any(x => x.ShortName.ToLower().Contains("москва"));
 
-					if (!isIcFilialInList && !(isMoscowInList && itemIC.FILIAL == 0))
+					if (!isIcFilialInList && !(isMoscowInList && itemIC.FILIAL == 99))
 						continue;
 
 					list.Add(itemIC);
@@ -189,6 +191,10 @@ namespace DiscountsForIC {
 					if (dataTable.Columns.Contains("ISCLOSE"))
 						isClose = row["ISCLOSE"].ToString().Equals("1");
 
+					bool autoProlong = false;
+					if (dataTable.Columns.Contains("AUTOPROLONG"))
+						autoProlong = row["AUTOPROLONG"].ToString().Equals("1");
+
 					Dictionary<string, int> values = new Dictionary<string, int> {
 							{ "STARTAMOUNT", 0 },
 							{ "FINISHAMOUNT", 0 },
@@ -224,9 +230,9 @@ namespace DiscountsForIC {
 
 					if (itemsFilial != null) {
 						bool isIcFilialInList = itemsFilial.Any(x => x.ID == itemDiscount.FILIAL);
-						bool isMoscowInList = itemsFilial.Any(x => x.FullName.ToLower().Contains("москва"));
+						bool isMoscowInList = itemsFilial.Any(x => x.ShortName.ToLower().Contains("москва"));
 
-						if (!isIcFilialInList && !(isMoscowInList && itemDiscount.FILIAL == 0))
+						if (!isIcFilialInList && !(isMoscowInList && itemDiscount.FILIAL == 99))
 							continue;
 					}
 
@@ -234,7 +240,7 @@ namespace DiscountsForIC {
 						if (isClose)
 							continue;
 
-						if (edate.HasValue && edate.Value < DateTime.Now)
+						if (edate.HasValue && (edate.Value < DateTime.Now && !autoProlong))
 							continue;
 					}
 
@@ -267,6 +273,18 @@ namespace DiscountsForIC {
 						ShortName = shortName,
 						FullName = fullName
 					};
+
+					if (itemFilial.ID == 97 || itemFilial.ID == 94 || itemFilial.ID == 99)
+						continue;
+
+					if (itemFilial.FullName.ToLower().Contains("москва")) {
+						if (itemsFilial.Any(p => p.ID == 0))
+							continue;
+
+						itemFilial.ID = 0;
+						itemFilial.ShortName = "Москва";
+						itemFilial.FullName = "Московские клиники (МДМ, СРЕТ, СУЩ, УК)";
+					}
 
 					itemsFilial.Add(itemFilial);
 				} catch (Exception e) {
