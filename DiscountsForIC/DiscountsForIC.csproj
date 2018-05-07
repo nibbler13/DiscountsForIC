@@ -213,5 +213,8 @@
   <ItemGroup>
     <Resource Include="Media\Contract_256x.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Media\All_32x.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

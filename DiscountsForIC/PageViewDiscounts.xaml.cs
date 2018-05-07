@@ -74,13 +74,14 @@ namespace DiscountsForIC {
 
 		public enum SearchType {
 			ByNameOrNumber,
-			ByDate
+			ByDate,
+			All
 		}
 
 
 
 
-		private PageViewDiscounts() {
+		public PageViewDiscounts() {
 			CultureInfo cultureInfo = CultureInfo.GetCultureInfo("ru-RU");
 			CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
 			CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
@@ -93,27 +94,23 @@ namespace DiscountsForIC {
 			};
 
 			DataContext = this;
+			searchType = SearchType.All;
+			Loaded += (s, e) => { UpdateListViewDiscounts(); };
 		}
 
 		public PageViewDiscounts(List<ItemIC> itemsIC) : this() {
 			this.itemsIC = itemsIC;
 			searchType = SearchType.ByNameOrNumber;
 
-			Loaded += (s, e) => {
-				UpdateListViewDiscounts();
-			};
 		}
 
-		public PageViewDiscounts(string sqlQuerySelectDiscountsByDate, Dictionary<string, string> sqlQueryParameters, List<ItemFilial> itemsFilial, bool showClosedContracts) : this() {
+		public PageViewDiscounts(string sqlQuerySelectDiscountsByDate, Dictionary<string, string> sqlQueryParameters,
+			List<ItemFilial> itemsFilial, bool showClosedContracts) : this() {
 			this.sqlQuerySelectDiscountsByDate = sqlQuerySelectDiscountsByDate;
 			this.sqlQueryParameters = sqlQueryParameters;
 			this.itemsFilial = itemsFilial;
 			this.showClosedContracts = showClosedContracts;
 			searchType = SearchType.ByDate;
-
-			Loaded += (s, e) => {
-				UpdateListViewDiscounts();
-			};
 		}
 
 
@@ -207,6 +204,11 @@ namespace DiscountsForIC {
 							sqlQueryParameters, 
 							itemsFilial, 
 							showClosedContracts);
+					});
+					break;
+				case SearchType.All:
+					await Task.Run(() => {
+						discounts = SystemDataHandle.SelectDiscountsAll();
 					});
 					break;
 				default:

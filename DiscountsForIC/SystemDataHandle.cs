@@ -14,11 +14,14 @@ namespace DiscountsForIC {
 		private static string sqlQueryUpdateOrInsertDiscount = Properties.Settings.Default.MisSqlUpdateOrInsertDiscount;
 		private static string sqlQueryDeleteDiscounts = Properties.Settings.Default.MisSqlDeleteDiscounts;
 		private static string sqlQuerySelectFilials = Properties.Settings.Default.MisSqlSelectFilials;
+		private static string sqlQuerySelectDiscountsAll = Properties.Settings.Default.MisSqlSelectDiscountsByDatesTemplate;
 		private static SystemFirebirdClient firebirdClient = new SystemFirebirdClient(
 			Properties.Settings.Default.MisDbAddress,
 			Properties.Settings.Default.MisDbName,
 			Properties.Settings.Default.MisDbUserName,
 			Properties.Settings.Default.MisDbPassword);
+
+		private static List<int> moscowFilials = new List<int>() { 97, 94, 6, 5, 1, 7, 12, 99 };
 
 		public static void CloseConnection() {
 			firebirdClient.Close();
@@ -115,8 +118,9 @@ namespace DiscountsForIC {
 
 					bool isIcFilialInList = itemsFilial.Any(x => x.ID == itemIC.FILIAL);
 					bool isMoscowInList = itemsFilial.Any(x => x.ShortName.ToLower().Contains("москва"));
+					bool currentIcIsMoscow = moscowFilials.Any(x => x == itemIC.FILIAL);
 
-					if (!isIcFilialInList && !(isMoscowInList && itemIC.FILIAL == 99))
+					if (!isIcFilialInList && !(isMoscowInList && currentIcIsMoscow))
 						continue;
 
 					list.Add(itemIC);
@@ -133,6 +137,11 @@ namespace DiscountsForIC {
 			List<ItemFilial> itemsFilial, bool showClosedContracts) {
 			DataTable dataTable = firebirdClient.GetDataTable(sqlQuery, parameters);
 			return ParseDataTableDiscounts(dataTable, itemsFilial, showClosedContracts);
+		}
+
+		public static List<ItemDiscount> SelectDiscountsAll() {
+			DataTable dataTable = firebirdClient.GetDataTable(sqlQuerySelectDiscountsAll, new Dictionary<string, string>());
+			return ParseDataTableDiscounts(dataTable, null, true);
 		}
 
 		public static List<ItemDiscount> SelectDiscount(System.Collections.IList selectedItemsIC) {
@@ -231,8 +240,9 @@ namespace DiscountsForIC {
 					if (itemsFilial != null) {
 						bool isIcFilialInList = itemsFilial.Any(x => x.ID == itemDiscount.FILIAL);
 						bool isMoscowInList = itemsFilial.Any(x => x.ShortName.ToLower().Contains("москва"));
+						bool isCurrentDiscountIsMoscow = moscowFilials.Any(x => x == itemDiscount.FILIAL);
 
-						if (!isIcFilialInList && !(isMoscowInList && itemDiscount.FILIAL == 99))
+						if (!isIcFilialInList && !(isMoscowInList && isCurrentDiscountIsMoscow))
 							continue;
 					}
 
@@ -274,16 +284,13 @@ namespace DiscountsForIC {
 						FullName = fullName
 					};
 
-					if (itemFilial.ID == 97 || itemFilial.ID == 94 || itemFilial.ID == 99)
-						continue;
-
-					if (itemFilial.FullName.ToLower().Contains("москва")) {
+					if (moscowFilials.Any(x => x == itemFilial.ID)) {
 						if (itemsFilial.Any(p => p.ID == 0))
 							continue;
 
 						itemFilial.ID = 0;
 						itemFilial.ShortName = "Москва";
-						itemFilial.FullName = "Московские клиники (МДМ, СРЕТ, СУЩ, УК)";
+						itemFilial.FullName = "Московские клиники (Call-центр, ДЦ, Кутуз, МДМ, М-СРЕТ, Скорая, СУЩ, УК)";
 					}
 
 					itemsFilial.Add(itemFilial);

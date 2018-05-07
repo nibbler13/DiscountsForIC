@@ -35,5 +35,25 @@ namespace DiscountsForIC {
 		private void ButtonBack_Click(object sender, RoutedEventArgs e) {
 			NavigationService.GoBack();
 		}
+
+		private async void ButtonSearchAll_Click(object sender, RoutedEventArgs e) {
+			List<ItemDiscount> itemsDiscount = null;
+
+			Cursor = Cursors.Wait;
+
+			await Task.Run(() => {
+				itemsDiscount = SystemDataHandle.SelectDiscountsAll();
+			});
+
+			Cursor = Cursors.Arrow;
+
+			if (itemsDiscount.Count == 0) {
+				MessageBox.Show("Нет данных за выбранный диапазон дат", "", MessageBoxButton.OK, MessageBoxImage.Information);
+				return;
+			}
+
+			PageViewDiscounts pageViewDiscounts = new PageViewDiscounts();
+			NavigationService.Navigate(pageViewDiscounts);
+		}
 	}
 }
