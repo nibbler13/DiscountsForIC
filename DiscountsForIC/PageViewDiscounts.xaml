@@ -225,7 +225,7 @@
                                     <Binding 
                                         Path="DISCOUNT"
                                         UpdateSourceTrigger="LostFocus"
-                                        StringFormat="{}{0:#}">
+                                        StringFormat="{}{0:0.##}">
                                         <Binding.ValidationRules>
                                             <local:PopValidationRule/>
                                         </Binding.ValidationRules>

@@ -130,8 +130,8 @@ namespace DiscountsForIC {
 			}
 		}
 
-		private int discount = 0;
-		public int DISCOUNT {
+		private float discount = 0;
+		public float DISCOUNT {
 			get {
 				return discount;
 			}
@@ -196,7 +196,7 @@ namespace DiscountsForIC {
 			int? bz_adid, int jid, int agrid, int filial,
 			bool endless,  DateTime beginDate, DateTime endDate, 
 			bool amountRelation, int? startAmount, int? finishAmount,
-			string comment, int discount) : this(shortName, jName, agNum) {
+			string comment, float discount) : this(shortName, jName, agNum) {
 			BZ_ADID = bz_adid;
 			JID = jid;
 			AGRID = agrid;

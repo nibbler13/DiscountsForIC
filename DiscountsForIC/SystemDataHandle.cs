@@ -207,7 +207,6 @@ namespace DiscountsForIC {
 					Dictionary<string, int> values = new Dictionary<string, int> {
 							{ "STARTAMOUNT", 0 },
 							{ "FINISHAMOUNT", 0 },
-							{ "DISCOUNT", 0 },
 							{ "BZ_ADID", 0 },
 							{ "JID", 0 },
 							{ "AGRID", 0 },
@@ -218,6 +217,8 @@ namespace DiscountsForIC {
 					foreach (string key in keys)
 						if (int.TryParse(row[key].ToString(), out int value))
 							values[key] = value;
+
+					float.TryParse(row["DISCOUNT"].ToString(), out float discount);
 
 					ItemDiscount itemDiscount = new ItemDiscount(
 						row["SHORTNAME"].ToString(),
@@ -234,7 +235,7 @@ namespace DiscountsForIC {
 						values["STARTAMOUNT"],
 						values["FINISHAMOUNT"],
 						row["COMMENT"].ToString(),
-						values["DISCOUNT"]
+						discount
 					);
 
 					if (itemsFilial != null) {

@@ -12,7 +12,7 @@ namespace DiscountsForIC {
 		public override ValidationResult Validate(object value, CultureInfo cultureInfo) {
 			string enteredText = (string)value;
 
-			if (int.TryParse(enteredText, out int popVal) &&
+			if (float.TryParse(enteredText, out float popVal) &&
 				(popVal < 0 || popVal > 100)) {
 				MessageBox.Show("Размер скидки должен быть в диапазоне от 0 до 100", "", MessageBoxButton.OK, MessageBoxImage.Warning);
 				return new ValidationResult(false, null);

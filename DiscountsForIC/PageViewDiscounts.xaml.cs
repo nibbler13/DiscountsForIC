@@ -451,14 +451,14 @@ namespace DiscountsForIC {
 		}
 
 		private static bool IsTextAllowed(string text) {
-			Regex regex = new Regex("[^0-9]+"); //regex that matches disallowed text
+			Regex regex = new Regex("[^0-9,.]+"); //regex that matches disallowed text
 			return !regex.IsMatch(text);
 		}
 
 
 		private void TextBox_PreviewLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) {
 			TextBox senderBox = (TextBox)sender;
-			senderBox.Text = senderBox.Text.TrimStart('0').Replace(" ", "").Replace(",", "").Replace("'", "").Replace(".", "");
+			senderBox.Text = senderBox.Text.TrimStart('0').Replace(" ", "").Replace(",", ".").Replace("'", "");
 		}
 
 		private void ButtonBack_Click(object sender, RoutedEventArgs e) {
